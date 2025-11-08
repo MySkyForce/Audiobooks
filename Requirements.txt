@@ -1,0 +1,23 @@
+# System Requirements for Audio Book Compiler Script
+
+# Required tools (must be installed and available in PATH)
+ffmpeg>=4.0
+ffprobe>=4.0
+bash (tested with GNU Bash 4.4+)
+
+# Optional (for installation on Debian/Ubuntu-based systems)
+# sudo apt update
+# sudo apt install ffmpeg
+
+# Folder structure
+Audio Books/        # Directory containing .m4a files to be processed
+
+# File format
+All input files must be in .m4a format with embedded metadata:
+- title
+- track
+- disc
+- album (optional, used for final output name)
+
+# Output
+Generates a single .m4b file with chapters and stereo AAC audio
