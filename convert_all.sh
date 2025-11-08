@@ -87,7 +87,8 @@ for folder in "$IMPORT_DIR"/*; do
     first_file=$(head -n 1 "$sorted_list" | cut -d'|' -f4)
     main_title=$(ffprobe -v error -show_entries format_tags=album -of default=noprint_wrappers=1:nokey=1 "$first_file")
     main_title=${main_title:-$folder_name}
-    safe_title=$(echo "$main_title" | sed 's/[^[:alnum:]_-]/_/g')
+    #safe_title=$(echo "$main_title" | sed 's/[^[:alnum:]_-]/_/g')
+    safe_title=$(echo "$main_title" | sed 's/[^[:alnum:]_-]/_/g' | sed 's/[_-]\{2,\}/_/g' | sed 's/^[_-]*//;s/[_-]*$//')
     final_file="${safe_title}.m4b"
 
     ffmpeg -i "$temp_audio" -f ffmetadata -i "$chapter_file" -map_metadata 1 \
