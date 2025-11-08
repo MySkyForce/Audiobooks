@@ -71,5 +71,4 @@ ffmpeg -i "$temp_audio" -f ffmetadata -i "$chapter_file" -map_metadata 1 \
   "${safe_title}.m4b"
 
 # Aufräumen
-#rm -f "$chapter_file" "$concat_list" "$temp_audio" "$sorted_list"
-
+rm -f "$chapter_file" "$concat_list" "$temp_audio" "$sorted_list"
