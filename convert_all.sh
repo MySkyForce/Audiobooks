@@ -11,22 +11,31 @@ touch "$LOG_FILE" "$CONVERTED_LIST"
 
 echo "$TIMESTAMP 🔍 Starting scan in $IMPORT_DIR" >> "$LOG_FILE"
 
-# Schritt: Konvertierung aus Import-Verzeichnis
 for folder in "$IMPORT_DIR"/*; do
   [ -d "$folder" ] || continue
   folder_name=$(basename "$folder")
+  lock_file="$folder/.lock"
 
-  # Prüfen ob bereits konvertiert laut Liste
+  # Prüfen ob bereits konvertiert
   if grep -Fxq "$folder_name" "$CONVERTED_LIST"; then
-    echo "$TIMESTAMP ⏭️  '$folder_name' already listed as converted – skipping." >> "$LOG_FILE"
+    echo "$TIMESTAMP ⏭️  '$folder_name' already converted – skipping." >> "$LOG_FILE"
     continue
   fi
 
+  # Prüfen ob gerade in Bearbeitung
+  if [ -f "$lock_file" ]; then
+    echo "$TIMESTAMP ⏳ '$folder_name' is currently being processed – skipping." >> "$LOG_FILE"
+    continue
+  fi
+
+  # Sperrdatei setzen
+  touch "$lock_file"
   echo "$TIMESTAMP 🎧 Converting '$folder_name'" >> "$LOG_FILE"
 
   (
     cd "$folder" || {
       echo "$TIMESTAMP ❌ Could not enter $folder_name" >> "$LOG_FILE"
+      rm -f "$lock_file"
       exit 1
     }
 
@@ -94,7 +103,7 @@ for folder in "$IMPORT_DIR"/*; do
       echo "$(date '+%Y-%m-%d %H:%M:%S') ❌ Conversion failed for $folder_name – no output file" >> "$LOG_FILE"
     fi
 
-    rm -f "$chapter_file" "$concat_list" "$temp_audio" "$sorted_list"
+    rm -f "$chapter_file" "$concat_list" "$temp_audio" "$sorted_list" "$lock_file"
   ) &
 done
 
