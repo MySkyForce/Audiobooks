@@ -1,21 +1,43 @@
 #!/bin/bash
 
 IMPORT_DIR="/mnt/audiobooks/Import"
+DONE_DIR="/mnt/audiobooks/Done"
 EXPORT_DIR="/mnt/audiobooks/Export"
 LOG_FILE="/var/log/audiobook_convert.log"
+CONVERTED_LIST="$DONE_DIR/converted.list"
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 
-mkdir -p "$EXPORT_DIR"
-touch "$LOG_FILE"
+mkdir -p "$IMPORT_DIR" "$DONE_DIR" "$EXPORT_DIR"
+touch "$LOG_FILE" "$CONVERTED_LIST"
 
-echo "$TIMESTAMP 🔍 Starting conversion scan in $IMPORT_DIR" >> "$LOG_FILE"
+echo "$TIMESTAMP 🔍 Starting scan in $IMPORT_DIR" >> "$LOG_FILE"
 
-# Durchlaufe alle Unterordner im Import-Verzeichnis
+# Schritt 1: Neue Ordner nach Done kopieren
 for folder in "$IMPORT_DIR"/*; do
   [ -d "$folder" ] || continue
-
   folder_name=$(basename "$folder")
-  echo "$TIMESTAMP 📁 Found folder: $folder_name" >> "$LOG_FILE"
+
+  if [ -d "$DONE_DIR/$folder_name" ]; then
+    echo "$TIMESTAMP ⏭️  '$folder_name' already in Done – skipping copy." >> "$LOG_FILE"
+    continue
+  fi
+
+  cp -r "$folder" "$DONE_DIR/$folder_name"
+  echo "$TIMESTAMP 📦 Copied '$folder_name' to Done." >> "$LOG_FILE"
+done
+
+# Schritt 2: Konvertierung aus Done-Verzeichnis
+for folder in "$DONE_DIR"/*; do
+  [ -d "$folder" ] || continue
+  folder_name=$(basename "$folder")
+
+  # Prüfen ob bereits konvertiert laut Liste
+  if grep -Fxq "$folder_name" "$CONVERTED_LIST"; then
+    echo "$TIMESTAMP ⏭️  '$folder_name' already listed as converted – skipping." >> "$LOG_FILE"
+    continue
+  fi
+
+  echo "$TIMESTAMP 🎧 Converting '$folder_name'" >> "$LOG_FILE"
 
   (
     cd "$folder" || {
@@ -23,7 +45,6 @@ for folder in "$IMPORT_DIR"/*; do
       exit 1
     }
 
-    # Zwischenablagen
     chapter_file="chapters.txt"
     concat_list="filelist.txt"
     temp_audio="combined.m4a"
@@ -31,7 +52,6 @@ for folder in "$IMPORT_DIR"/*; do
 
     rm -f "$chapter_file" "$concat_list" "$temp_audio" "$sorted_list"
 
-    # Metadaten auslesen
     for f in *.m4a; do
       [ -f "$f" ] || continue
 
@@ -57,7 +77,7 @@ for folder in "$IMPORT_DIR"/*; do
       echo "file '$PWD/$f'" >> "$concat_list"
 
       duration=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$f")
-      duration_ms=$(echo "$duration * 1000" | bc | cut -d. -f1)
+      duration_ms=$(echo "$duration" | awk '{printf "%.0f", $1 * 1000}')
 
       echo "[CHAPTER]" >> "$chapter_file"
       echo "TIMEBASE=1/1000" >> "$chapter_file"
@@ -72,15 +92,22 @@ for folder in "$IMPORT_DIR"/*; do
 
     first_file=$(head -n 1 "$sorted_list" | cut -d'|' -f4)
     main_title=$(ffprobe -v error -show_entries format_tags=album -of default=noprint_wrappers=1:nokey=1 "$first_file")
-    main_title=${main_title:-Hörbuch}
+    main_title=${main_title:-$folder_name}
     safe_title=$(echo "$main_title" | sed 's/[^[:alnum:]_-]/_/g')
+    final_file="${safe_title}.m4b"
 
     ffmpeg -i "$temp_audio" -f ffmetadata -i "$chapter_file" -map_metadata 1 \
       -metadata title="$main_title" \
       -c:a aac -b:a 192k -ac 2 \
-      "$EXPORT_DIR/${safe_title}.m4b"
+      "$final_file"
 
-    echo "$(date '+%Y-%m-%d %H:%M:%S') ✅ Finished: $folder_name → ${safe_title}.m4b" >> "$LOG_FILE"
+    if [ -f "$final_file" ]; then
+      mv "$final_file" "$EXPORT_DIR/"
+      echo "$folder_name" >> "$CONVERTED_LIST"
+      echo "$(date '+%Y-%m-%d %H:%M:%S') ✅ Finished: $folder_name → $EXPORT_DIR/$final_file" >> "$LOG_FILE"
+    else
+      echo "$(date '+%Y-%m-%d %H:%M:%S') ❌ Conversion failed for $folder_name – no output file" >> "$LOG_FILE"
+    fi
 
     rm -f "$chapter_file" "$concat_list" "$temp_audio" "$sorted_list"
   ) &
