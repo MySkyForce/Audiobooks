@@ -6,6 +6,7 @@ echo "🔍 Checking system requirements for Audio Book Compiler..."
 REQUIRED_FFMPEG="4.0"
 REQUIRED_FFPROBE="4.0"
 REQUIRED_BASH="4.4"
+REQUIRED_BC="1.06"  # Optional, bc ist meist stabil
 
 # Version comparison helper
 version_ge() {
@@ -37,6 +38,7 @@ check_tool() {
 check_tool ffmpeg "$REQUIRED_FFMPEG" "ffmpeg -version"
 check_tool ffprobe "$REQUIRED_FFPROBE" "ffprobe -version"
 check_tool bash "$REQUIRED_BASH" "bash --version"
+check_tool bc "$REQUIRED_BC" "bc --version"
 
 echo "✅ Requirement check completed."
 
