@@ -22,12 +22,12 @@ for folder in "$UPLOAD_DIR"/*; do
   previous_size=$(grep "^$folder_name|" "$CACHE_FILE" | cut -d'|' -f2)
 
   if [ "$current_size" = "$previous_size" ] && [ -n "$previous_size" ]; then
-    echo "📦 '$folder_name' ist stabil – wird verschoben."
+    echo "$(date '+%Y-%m-%d %H:%M:%S') 📦 '$folder_name' ist stabil – wird verschoben."
     mv "$folder" "$IMPORT_DIR/"
     # Aus Cache entfernen
     sed -i "/^$folder_name|/d" "$CACHE_FILE"
   else
-    echo "⏳ '$folder_name' wird noch beschrieben – bleibt im Upload."
+    echo "$(date '+%Y-%m-%d %H:%M:%S') ⏳ '$folder_name' wird noch beschrieben – bleibt im Upload."
     # Cache aktualisieren
     sed -i "/^$folder_name|/d" "$CACHE_FILE"
     echo "$folder_name|$current_size" >> "$CACHE_FILE"
