@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DONE_DIR="/mnt/audiobooks/Done"
+DONE_DIR="/mnt/audiobooks/Import"
 LOG_FILE="/var/log/audiobook_convert.log"
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 

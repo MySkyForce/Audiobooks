@@ -1,33 +1,18 @@
 #!/bin/bash
 
 IMPORT_DIR="/mnt/audiobooks/Import"
-DONE_DIR="/mnt/audiobooks/Done"
 EXPORT_DIR="/mnt/audiobooks/Export"
 LOG_FILE="/var/log/audiobook_convert.log"
-CONVERTED_LIST="$DONE_DIR/converted.list"
+CONVERTED_LIST="/mnt/audiobooks/converted.list"
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 
-mkdir -p "$IMPORT_DIR" "$DONE_DIR" "$EXPORT_DIR"
+mkdir -p "$IMPORT_DIR" "$EXPORT_DIR"
 touch "$LOG_FILE" "$CONVERTED_LIST"
 
 echo "$TIMESTAMP 🔍 Starting scan in $IMPORT_DIR" >> "$LOG_FILE"
 
-# Schritt 1: Neue Ordner nach Done kopieren
+# Schritt: Konvertierung aus Import-Verzeichnis
 for folder in "$IMPORT_DIR"/*; do
-  [ -d "$folder" ] || continue
-  folder_name=$(basename "$folder")
-
-  if [ -d "$DONE_DIR/$folder_name" ]; then
-    echo "$TIMESTAMP ⏭️  '$folder_name' already in Done – skipping copy." >> "$LOG_FILE"
-    continue
-  fi
-
-  cp -r "$folder" "$DONE_DIR/$folder_name"
-  echo "$TIMESTAMP 📦 Copied '$folder_name' to Done." >> "$LOG_FILE"
-done
-
-# Schritt 2: Konvertierung aus Done-Verzeichnis
-for folder in "$DONE_DIR"/*; do
   [ -d "$folder" ] || continue
   folder_name=$(basename "$folder")
 
