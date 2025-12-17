@@ -1,5 +1,5 @@
 📚 Audio Book Compiler Script
-This Bash script automates the process of merging multiple .m4a audio files into a single .m4b audiobook file with embedded chapter metadata.
+This Bash script automates the process of merging multiple .m4a & .flac audio files into a single .m4b audiobook file with embedded chapter metadata.
 
 🔧 Features
 Automatically detects and sorts audio files by CD and track number using ffprobe
